@@ -62,4 +62,13 @@ Route::middleware(
         ]
     );
 
+
+    Route::post(
+        '/characters',
+        [
+            CharacterController::class,
+            'store',
+        ]
+    );
+
 });
