@@ -12,9 +12,10 @@ class DatabaseSeeder extends Seeder
             'local',
             'testing',
         ])) {
-            $this->call(
-                DevelopmentAccountSeeder::class
-            );
+            $this->call([
+                DevelopmentAccountSeeder::class,
+                DevelopmentCharacterSeeder::class,
+            ]);
         }
     }
 }

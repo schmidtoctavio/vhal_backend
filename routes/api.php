@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CharacterController;
+
 use Illuminate\Support\Facades\Route;
+
 
 
 Route::prefix('auth')->group(function (): void {
@@ -33,6 +36,14 @@ Route::prefix('auth')->group(function (): void {
             [
                 AuthController::class,
                 'logout',
+            ]
+        );
+
+        Route::get(
+            '/characters',
+            [
+                CharacterController::class,
+                'index',
             ]
         );
 
