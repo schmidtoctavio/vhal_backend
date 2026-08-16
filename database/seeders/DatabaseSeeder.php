@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             'testing',
         ])) {
             $this->call([
+                CharacterClassSeeder::class,
                 DevelopmentAccountSeeder::class,
                 DevelopmentCharacterSeeder::class,
             ]);

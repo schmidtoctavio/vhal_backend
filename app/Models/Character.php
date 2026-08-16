@@ -28,4 +28,12 @@ class Character extends Model
     {
         return $this->belongsTo(Account::class);
     }
+
+    public function characterClass(): BelongsTo
+    {
+        return $this->belongsTo(
+            CharacterClass::class,
+            'class_id'
+        );
+    }
 }
