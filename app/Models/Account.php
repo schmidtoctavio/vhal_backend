@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable([
     'username',
@@ -13,8 +15,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
     'status',
     'last_login_at',
 ])]
+#[Hidden([
+    'password',
+])]
 class Account extends Authenticatable
 {
+    use HasApiTokens;
+
     protected function casts(): array
     {
         return [
