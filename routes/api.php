@@ -71,4 +71,14 @@ Route::middleware(
         ]
     );
 
+    Route::delete(
+        '/characters/{characterId}',
+        [
+            CharacterController::class,
+            'destroy',
+        ]
+    )->whereNumber(
+        'characterId'
+    );
+
 });

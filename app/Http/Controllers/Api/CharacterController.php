@@ -94,4 +94,47 @@ class CharacterController extends Controller
             ],
         ], 201);
     }
+
+    public function destroy(
+        Request $request,
+        int $characterId
+    ): JsonResponse {
+        /** @var Account $account */
+        $account = $request->user();
+
+
+        $character = $account
+            ->characters()
+            ->whereKey(
+                $characterId
+            )
+            ->first();
+
+
+        if ($character === null) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'No se encontró el personaje.',
+            ], 404);
+        }
+
+
+        $deletedCharacter = [
+            'id' => $character->id,
+            'slot_index' => $character->slot_index,
+            'name' => $character->name,
+        ];
+
+
+        $character->delete();
+
+
+        return response()->json([
+            'ok' => true,
+
+            'data' => [
+                'character' => $deletedCharacter,
+            ],
+        ]);
+    }
 }
