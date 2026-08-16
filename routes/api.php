@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CharacterController;
-
 use Illuminate\Support\Facades\Route;
 
 
+// =========================================================
+// AUTENTICACIÓN
+// =========================================================
 
 Route::prefix('auth')->group(function (): void {
 
@@ -39,14 +41,25 @@ Route::prefix('auth')->group(function (): void {
             ]
         );
 
-        Route::get(
-            '/characters',
-            [
-                CharacterController::class,
-                'index',
-            ]
-        );
-
     });
+
+});
+
+
+// =========================================================
+// PERSONAJES
+// =========================================================
+
+Route::middleware(
+    'auth:sanctum'
+)->group(function (): void {
+
+    Route::get(
+        '/characters',
+        [
+            CharacterController::class,
+            'index',
+        ]
+    );
 
 });
