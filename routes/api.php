@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CharacterController;
+use App\Http\Controllers\Api\GameSessionTicketController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -79,6 +80,18 @@ Route::middleware(
         ]
     )->whereNumber(
         'characterId'
+    );
+
+    // =====================================================
+    // GAME SESSION
+    // =====================================================
+
+    Route::post(
+        '/game-session/tickets',
+        [
+            GameSessionTicketController::class,
+            'store',
+        ]
     );
 
 });
