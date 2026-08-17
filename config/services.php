@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'game_server' => [
+        'internal_key' => env(
+            'GAME_SERVER_INTERNAL_KEY'
+        ),
+    ],
+
 ];

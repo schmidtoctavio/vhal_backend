@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CharacterController;
 use App\Http\Controllers\Api\GameSessionTicketController;
+use App\Http\Controllers\Api\InternalGameSessionTicketController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -91,6 +92,24 @@ Route::middleware(
         [
             GameSessionTicketController::class,
             'store',
+        ]
+    );
+
+});
+
+// =========================================================
+// GAME SERVER INTERNO
+// =========================================================
+
+Route::middleware(
+    'game-server'
+)->group(function (): void {
+
+    Route::post(
+        '/internal/game-session/tickets/consume',
+        [
+            InternalGameSessionTicketController::class,
+            'consume',
         ]
     );
 
