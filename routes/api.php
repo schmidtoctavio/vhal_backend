@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CharacterController;
 use App\Http\Controllers\Api\GameSessionTicketController;
 use App\Http\Controllers\Api\InternalGameSessionTicketController;
+use App\Http\Controllers\Api\InternalVaultController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -111,6 +112,20 @@ Route::middleware(
             InternalGameSessionTicketController::class,
             'consume',
         ]
+    );
+
+    // =====================================================
+    // VAULT / WAREHOUSE
+    // =====================================================
+
+    Route::get(
+        '/internal/accounts/{accountId}/vault',
+        [
+            InternalVaultController::class,
+            'show',
+        ]
+    )->whereNumber(
+        'accountId'
     );
 
 });
