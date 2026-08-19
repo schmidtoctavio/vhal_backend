@@ -128,4 +128,16 @@ Route::middleware(
         'accountId'
     );
 
+    Route::patch(
+        '/internal/accounts/{accountId}/vault/items/{uid}/position',
+        [
+            InternalVaultController::class,
+            'moveItem',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereUuid(
+        'uid'
+    );
+
 });
