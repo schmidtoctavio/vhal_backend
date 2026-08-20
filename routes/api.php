@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CharacterController;
 use App\Http\Controllers\Api\GameSessionTicketController;
 use App\Http\Controllers\Api\InternalGameSessionTicketController;
 use App\Http\Controllers\Api\InternalVaultController;
+use App\Http\Controllers\Api\InternalCharacterInventoryController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -138,6 +139,22 @@ Route::middleware(
         'accountId'
     )->whereUuid(
         'uid'
+    );
+
+    // =====================================================
+    // INVENTARIO PERSISTENTE DEL PERSONAJE
+    // =====================================================
+
+    Route::get(
+        '/internal/accounts/{accountId}/characters/{characterId}/inventory',
+        [
+            InternalCharacterInventoryController::class,
+            'show',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
     );
 
 });
