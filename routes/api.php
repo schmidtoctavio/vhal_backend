@@ -157,4 +157,18 @@ Route::middleware(
         'characterId'
     );
 
+    Route::patch(
+        '/internal/accounts/{accountId}/characters/{characterId}/inventory/items/{uid}/position',
+        [
+            InternalCharacterInventoryController::class,
+            'moveItem',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    )->whereUuid(
+        'uid'
+    );
+
 });
