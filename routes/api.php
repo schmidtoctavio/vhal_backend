@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\GameSessionTicketController;
 use App\Http\Controllers\Api\InternalGameSessionTicketController;
 use App\Http\Controllers\Api\InternalVaultController;
 use App\Http\Controllers\Api\InternalCharacterInventoryController;
+use App\Http\Controllers\Api\InternalItemTransferController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -162,6 +163,24 @@ Route::middleware(
         [
             InternalCharacterInventoryController::class,
             'moveItem',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    )->whereUuid(
+        'uid'
+    );
+
+    // =====================================================
+    // TRANSFERENCIAS INVENTORY <-> VAULT
+    // =====================================================
+
+    Route::patch(
+        '/internal/accounts/{accountId}/characters/{characterId}/items/{uid}/transfer',
+        [
+            InternalItemTransferController::class,
+            'transfer',
         ]
     )->whereNumber(
         'accountId'
