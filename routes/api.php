@@ -3,10 +3,11 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CharacterController;
 use App\Http\Controllers\Api\GameSessionTicketController;
-use App\Http\Controllers\Api\InternalGameSessionTicketController;
-use App\Http\Controllers\Api\InternalVaultController;
+use App\Http\Controllers\Api\InternalCharacterEquipmentController;
 use App\Http\Controllers\Api\InternalCharacterInventoryController;
+use App\Http\Controllers\Api\InternalGameSessionTicketController;
 use App\Http\Controllers\Api\InternalItemTransferController;
+use App\Http\Controllers\Api\InternalVaultController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -76,6 +77,7 @@ Route::middleware(
         ]
     );
 
+
     Route::delete(
         '/characters/{characterId}',
         [
@@ -85,6 +87,7 @@ Route::middleware(
     )->whereNumber(
         'characterId'
     );
+
 
     // =====================================================
     // GAME SESSION
@@ -99,6 +102,7 @@ Route::middleware(
     );
 
 });
+
 
 // =========================================================
 // GAME SERVER INTERNO
@@ -116,6 +120,7 @@ Route::middleware(
         ]
     );
 
+
     // =====================================================
     // VAULT / WAREHOUSE
     // =====================================================
@@ -130,6 +135,7 @@ Route::middleware(
         'accountId'
     );
 
+
     Route::patch(
         '/internal/accounts/{accountId}/vault/items/{uid}/position',
         [
@@ -141,6 +147,7 @@ Route::middleware(
     )->whereUuid(
         'uid'
     );
+
 
     // =====================================================
     // INVENTARIO PERSISTENTE DEL PERSONAJE
@@ -158,6 +165,7 @@ Route::middleware(
         'characterId'
     );
 
+
     Route::patch(
         '/internal/accounts/{accountId}/characters/{characterId}/inventory/items/{uid}/position',
         [
@@ -171,6 +179,54 @@ Route::middleware(
     )->whereUuid(
         'uid'
     );
+
+
+    // =====================================================
+    // EQUIPMENT PERSISTENTE DEL PERSONAJE
+    // =====================================================
+
+    Route::get(
+        '/internal/accounts/{accountId}/characters/{characterId}/equipment',
+        [
+            InternalCharacterEquipmentController::class,
+            'show',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    );
+
+
+    Route::patch(
+        '/internal/accounts/{accountId}/characters/{characterId}/equipment/items/{uid}/equip',
+        [
+            InternalCharacterEquipmentController::class,
+            'equipItem',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    )->whereUuid(
+        'uid'
+    );
+
+
+    Route::patch(
+        '/internal/accounts/{accountId}/characters/{characterId}/equipment/items/{uid}/unequip',
+        [
+            InternalCharacterEquipmentController::class,
+            'unequipItem',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    )->whereUuid(
+        'uid'
+    );
+
 
     // =====================================================
     // TRANSFERENCIAS INVENTORY <-> VAULT
