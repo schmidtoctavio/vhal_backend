@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'name',
     'class_id',
     'level',
+    'experience',
 ])]
 class Character extends Model
 {
@@ -21,6 +22,7 @@ class Character extends Model
             'account_id' => 'integer',
             'slot_index' => 'integer',
             'level' => 'integer',
+            'experience' => 'integer',
         ];
     }
 

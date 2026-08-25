@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\InternalCharacterInventoryController;
 use App\Http\Controllers\Api\InternalGameSessionTicketController;
 use App\Http\Controllers\Api\InternalItemTransferController;
 use App\Http\Controllers\Api\InternalVaultController;
+use App\Http\Controllers\Api\InternalCharacterProgressionController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -148,6 +149,21 @@ Route::middleware(
         'uid'
     );
 
+    // =========================================================
+    // PROGRESIÓN PERSISTENTE DEL PERSONAJE
+    // =========================================================
+
+    Route::patch(
+        '/internal/accounts/{accountId}/characters/{characterId}/progression',
+        [
+            InternalCharacterProgressionController::class,
+            'update',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    );
 
     // =====================================================
     // INVENTARIO PERSISTENTE DEL PERSONAJE
