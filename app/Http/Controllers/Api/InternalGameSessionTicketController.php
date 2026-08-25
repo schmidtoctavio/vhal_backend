@@ -137,6 +137,7 @@ class InternalGameSessionTicketController extends Controller
                         'name' => $character->name,
                         'class_id' => $character->class_id,
                         'level' => $character->level,
+                        'experience' => $character->experience,
                     ],
                 ];
             }
