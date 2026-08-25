@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\InternalGameSessionTicketController;
 use App\Http\Controllers\Api\InternalItemTransferController;
 use App\Http\Controllers\Api\InternalVaultController;
 use App\Http\Controllers\Api\InternalCharacterProgressionController;
+use App\Http\Controllers\Api\InternalCharacterRuntimeStateController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -119,6 +120,22 @@ Route::middleware(
             InternalGameSessionTicketController::class,
             'consume',
         ]
+    );
+
+    // =========================================================
+    // RUNTIME PERSISTENTE DEL PERSONAJE
+    // =========================================================
+
+    Route::put(
+        '/internal/accounts/{accountId}/characters/{characterId}/runtime-state',
+        [
+            InternalCharacterRuntimeStateController::class,
+            'update',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
     );
 
 

@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+
 class InternalGameSessionTicketController extends Controller
 {
     public function consume(
@@ -97,7 +98,23 @@ class InternalGameSessionTicketController extends Controller
                 }
 
 
+                // -----------------------------------------
+                // PERSONAJE + RUNTIME DURABLE
+                // -----------------------------------------
+                //
+                // El runtime puede ser NULL.
+                //
+                // Eso significa que el personaje todavía
+                // nunca generó un checkpoint persistente.
+                //
+                // En ese caso será el Game Server quien
+                // use spawn y Vitals foundation.
+                // -----------------------------------------
+
                 $character = Character::query()
+                    ->with(
+                        'runtimeState'
+                    )
                     ->whereKey(
                         $ticket->character_id
                     )
@@ -114,6 +131,11 @@ class InternalGameSessionTicketController extends Controller
                         'reason' => 'invalid',
                     ];
                 }
+
+
+                $runtimeState = (
+                    $character->runtimeState
+                );
 
 
                 // -----------------------------------------
@@ -133,11 +155,86 @@ class InternalGameSessionTicketController extends Controller
 
                     'character' => [
                         'id' => $character->id,
-                        'slot_index' => $character->slot_index,
+
+                        'slot_index' => (
+                            $character->slot_index
+                        ),
+
                         'name' => $character->name,
-                        'class_id' => $character->class_id,
-                        'level' => $character->level,
-                        'experience' => $character->experience,
+
+                        'class_id' => (
+                            $character->class_id
+                        ),
+
+                        // ---------------------------------
+                        // PROGRESIÓN DURABLE
+                        // ---------------------------------
+
+                        'level' => (
+                            $character->level
+                        ),
+
+                        'experience' => (
+                            $character->experience
+                        ),
+
+                        // ---------------------------------
+                        // RUNTIME DURABLE
+                        // ---------------------------------
+
+                        'runtime' => (
+                            $runtimeState === null
+                            ?
+                            null
+                            :
+                            [
+                                'revision' => (
+                                    (int) $runtimeState
+                                        ->revision
+                                ),
+
+                                'world' => [
+                                    'map_id' => (
+                                        $runtimeState
+                                            ->map_id
+                                    ),
+
+                                    'position' => [
+                                        'x' => (
+                                            (float) $runtimeState
+                                                ->position_x
+                                        ),
+
+                                        'y' => (
+                                            (float) $runtimeState
+                                                ->position_y
+                                        ),
+
+                                        'z' => (
+                                            (float) $runtimeState
+                                                ->position_z
+                                        ),
+                                    ],
+
+                                    'rotation_y' => (
+                                        (float) $runtimeState
+                                            ->rotation_y
+                                    ),
+                                ],
+
+                                'vitals' => [
+                                    'hp' => (
+                                        (int) $runtimeState
+                                            ->hp
+                                    ),
+
+                                    'mp' => (
+                                        (int) $runtimeState
+                                            ->mp
+                                    ),
+                                ],
+                            ]
+                        ),
                     ],
                 ];
             }
@@ -145,24 +242,41 @@ class InternalGameSessionTicketController extends Controller
 
 
         if (! $result['ok']) {
-            $reason = $result['reason'];
+            $reason = $result[
+                'reason'
+            ];
 
 
             $status = match ($reason) {
                 'expired' => 410,
+
                 'consumed' => 409,
+
                 'account_disabled' => 403,
+
                 default => 401,
             };
 
 
             return response()->json([
                 'ok' => false,
+
                 'message' => match ($reason) {
-                    'expired' => 'El ticket expiró.',
-                    'consumed' => 'El ticket ya fue utilizado.',
-                    'account_disabled' => 'La cuenta no está habilitada.',
-                    default => 'Ticket inválido.',
+                    'expired' => (
+                        'El ticket expiró.'
+                    ),
+
+                    'consumed' => (
+                        'El ticket ya fue utilizado.'
+                    ),
+
+                    'account_disabled' => (
+                        'La cuenta no está habilitada.'
+                    ),
+
+                    default => (
+                        'Ticket inválido.'
+                    ),
                 },
             ], $status);
         }
@@ -172,8 +286,13 @@ class InternalGameSessionTicketController extends Controller
             'ok' => true,
 
             'data' => [
-                'account_id' => $result['account_id'],
-                'character' => $result['character'],
+                'account_id' => (
+                    $result['account_id']
+                ),
+
+                'character' => (
+                    $result['character']
+                ),
             ],
         ]);
     }
