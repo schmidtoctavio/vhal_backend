@@ -10,6 +10,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use App\Application\Inventory\CharacterInventoryPersistence;
+use App\Application\Inventory\InventoryPersistenceException;
+
 class InternalCharacterInventoryController extends Controller
 {
     public function show(
@@ -116,6 +119,160 @@ class InternalCharacterInventoryController extends Controller
         ]);
     }
 
+    public function storeItem(
+        Request $request,
+        int $accountId,
+        int $characterId,
+        CharacterInventoryPersistence $persistence
+    ): JsonResponse {
+        $validated = $request->validate([
+            'uid' => [
+                'required',
+                'uuid',
+            ],
+
+            'item_id' => [
+                'required',
+                'string',
+                'max:64',
+            ],
+
+            'quantity' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:9999',
+            ],
+
+            'grid_position' => [
+                'required',
+                'array',
+            ],
+
+            'grid_position.x' => [
+                'required',
+                'integer',
+                'min:0',
+                'max:7',
+            ],
+
+            'grid_position.y' => [
+                'required',
+                'integer',
+                'min:0',
+                'max:7',
+            ],
+        ]);
+
+
+        $account = Account::query()
+            ->whereKey(
+                $accountId
+            )
+            ->first();
+
+
+        if ($account === null) {
+            return response()->json([
+                'ok' => false,
+
+                'message' => 'Cuenta no encontrada.',
+            ], 404);
+        }
+
+
+        if ($account->status !== 'active') {
+            return response()->json([
+                'ok' => false,
+
+                'message' => 'La cuenta no está habilitada.',
+            ], 403);
+        }
+
+
+        $character = Character::query()
+            ->whereKey(
+                $characterId
+            )
+            ->where(
+                'account_id',
+                $account->id
+            )
+            ->first();
+
+
+        if ($character === null) {
+            return response()->json([
+                'ok' => false,
+
+                'message' => 'Personaje no encontrado.',
+            ], 404);
+        }
+
+
+        try {
+            $result = $persistence->persistGrantedItem(
+                $account,
+                $character,
+                (string) $validated['uid'],
+                (string) $validated['item_id'],
+                (int) $validated['quantity'],
+                (int) $validated[
+                    'grid_position'
+                ]['x'],
+                (int) $validated[
+                    'grid_position'
+                ]['y']
+            );
+        } catch (InventoryPersistenceException $exception) {
+            return response()->json([
+                'ok' => false,
+
+                'message' => $exception->getMessage(),
+
+                'data' => $exception->context(),
+            ], 409);
+        }
+
+
+        /** @var ItemInstance $item */
+        $item = $result['item'];
+
+        $created = (bool) $result['created'];
+
+
+        return response()->json([
+            'ok' => true,
+
+            'data' => [
+                'account_id' => $account->id,
+
+                'character_id' => $character->id,
+
+                'container' => 'inventory',
+
+                'idempotent' => (
+                    !$created
+                ),
+
+                'item' => [
+                    'uid' => $item->uid,
+
+                    'item_id' => $item->item_id,
+
+                    'quantity' => $item->quantity,
+
+                    'grid_position' => [
+                        'x' => $item->grid_x,
+
+                        'y' => $item->grid_y,
+                    ],
+
+                    'state' => $item->state,
+                ],
+            ],
+        ], $created ? 201 : 200);
+    }
 
     public function moveItem(
         Request $request,

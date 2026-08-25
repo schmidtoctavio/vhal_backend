@@ -180,6 +180,17 @@ Route::middleware(
         'uid'
     );
 
+    Route::post(
+        '/internal/accounts/{accountId}/characters/{characterId}/inventory/items',
+        [
+            InternalCharacterInventoryController::class,
+            'storeItem',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    );
 
     // =====================================================
     // EQUIPMENT PERSISTENTE DEL PERSONAJE
