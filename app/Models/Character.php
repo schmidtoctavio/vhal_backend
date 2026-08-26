@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+
 
 #[Fillable([
     'account_id',
@@ -27,10 +29,14 @@ class Character extends Model
         ];
     }
 
+
     public function account(): BelongsTo
     {
-        return $this->belongsTo(Account::class);
+        return $this->belongsTo(
+            Account::class
+        );
     }
+
 
     public function characterClass(): BelongsTo
     {
@@ -40,6 +46,7 @@ class Character extends Model
         );
     }
 
+
     public function runtimeState(): HasOne
     {
         return $this->hasOne(
@@ -47,4 +54,11 @@ class Character extends Model
         );
     }
 
+
+    public function skills(): HasMany
+    {
+        return $this->hasMany(
+            CharacterSkill::class
+        );
+    }
 }

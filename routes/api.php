@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\InternalItemTransferController;
 use App\Http\Controllers\Api\InternalVaultController;
 use App\Http\Controllers\Api\InternalCharacterProgressionController;
 use App\Http\Controllers\Api\InternalCharacterRuntimeStateController;
+use App\Http\Controllers\Api\InternalCharacterSkillController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -138,6 +139,21 @@ Route::middleware(
         'characterId'
     );
 
+    // =====================================================
+    // SKILLS PERSISTENTES DEL PERSONAJE
+    // =====================================================
+
+    Route::post(
+        '/internal/accounts/{accountId}/characters/{characterId}/skills',
+        [
+            InternalCharacterSkillController::class,
+            'store',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    );
 
     // =====================================================
     // VAULT / WAREHOUSE

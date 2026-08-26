@@ -112,9 +112,10 @@ class InternalGameSessionTicketController extends Controller
                 // -----------------------------------------
 
                 $character = Character::query()
-                    ->with(
-                        'runtimeState'
-                    )
+                    ->with([
+                        'runtimeState',
+                        'skills',
+                    ])
                     ->whereKey(
                         $ticket->character_id
                     )
@@ -137,6 +138,25 @@ class InternalGameSessionTicketController extends Controller
                     $character->runtimeState
                 );
 
+                $learnedSkillIds = (
+                    $character
+                        ->skills
+                        ->pluck(
+                            'skill_id'
+                        )
+                        ->map(
+                            static fn (
+                                string $skillId
+                            ): string => strtolower(
+                                trim(
+                                    $skillId
+                                )
+                            )
+                        )
+                        ->sort()
+                        ->values()
+                        ->all()
+                );                
 
                 // -----------------------------------------
                 // A partir de este momento el ticket queda
@@ -178,6 +198,16 @@ class InternalGameSessionTicketController extends Controller
                             $character->experience
                         ),
 
+                        // ---------------------------------
+                        // SKILL OWNERSHIP DURABLE
+                        // ---------------------------------
+
+                        'skills' => [
+                            'learned_skill_ids' => (
+                                $learnedSkillIds
+                            ),
+                        ],
+                        
                         // ---------------------------------
                         // RUNTIME DURABLE
                         // ---------------------------------
