@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'character_id',
     'skill_id',
+    'learned_from_item_uid',
+    'learned_from_item_id',
 ])]
 class CharacterSkill extends Model
 {
