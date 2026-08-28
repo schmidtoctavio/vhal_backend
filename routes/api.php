@@ -228,6 +228,18 @@ Route::middleware(
         'characterId'
     );
 
+    Route::patch(
+        '/internal/accounts/{accountId}/characters/{characterId}/stats',
+        [
+            InternalCharacterStatsController::class,
+            'update',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    );
+
     // =====================================================
     // INVENTARIO PERSISTENTE DEL PERSONAJE
     // =====================================================
