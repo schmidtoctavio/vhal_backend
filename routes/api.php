@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\InternalCharacterProgressionController;
 use App\Http\Controllers\Api\InternalCharacterRuntimeStateController;
 use App\Http\Controllers\Api\InternalCharacterSkillController;
 use App\Http\Controllers\Api\InternalCharacterSkillLearningController;
+use App\Http\Controllers\Api\InternalCharacterStatsController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -204,6 +205,22 @@ Route::middleware(
         [
             InternalCharacterProgressionController::class,
             'update',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    );
+
+    // =========================================================
+    // STATS PERSISTENTES DEL PERSONAJE
+    // =========================================================
+
+    Route::get(
+        '/internal/accounts/{accountId}/characters/{characterId}/stats',
+        [
+            InternalCharacterStatsController::class,
+            'show',
         ]
     )->whereNumber(
         'accountId'

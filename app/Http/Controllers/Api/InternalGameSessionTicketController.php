@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Application\Stats\CharacterStatSnapshotBuilder;
+use App\Application\Stats\CharacterStatSnapshotException;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Character;
@@ -14,7 +16,8 @@ use Illuminate\Support\Facades\DB;
 class InternalGameSessionTicketController extends Controller
 {
     public function consume(
-        Request $request
+        Request $request,
+        CharacterStatSnapshotBuilder $statSnapshotBuilder
     ): JsonResponse {
         $data = $request->validate([
             'ticket' => [
@@ -33,7 +36,8 @@ class InternalGameSessionTicketController extends Controller
 
         $result = DB::transaction(
             function () use (
-                $ticketHash
+                $ticketHash,
+                $statSnapshotBuilder
             ): array {
                 // -----------------------------------------
                 // Bloqueamos la fila durante el consumo.
@@ -99,22 +103,14 @@ class InternalGameSessionTicketController extends Controller
 
 
                 // -----------------------------------------
-                // PERSONAJE + RUNTIME DURABLE
-                // -----------------------------------------
-                //
-                // El runtime puede ser NULL.
-                //
-                // Eso significa que el personaje todavía
-                // nunca generó un checkpoint persistente.
-                //
-                // En ese caso será el Game Server quien
-                // use spawn y Vitals foundation.
+                // PERSONAJE + ESTADOS DURABLES
                 // -----------------------------------------
 
                 $character = Character::query()
                     ->with([
                         'runtimeState',
                         'skills',
+                        'statAllocation',
                     ])
                     ->whereKey(
                         $ticket->character_id
@@ -134,9 +130,46 @@ class InternalGameSessionTicketController extends Controller
                 }
 
 
+                // -----------------------------------------
+                // STATS DURABLES / BUDGET
+                // -----------------------------------------
+                //
+                // Deben validarse ANTES de consumir el
+                // ticket.
+                //
+                // Si el estado durable es inconsistente,
+                // la sesión no puede arrancar.
+                // -----------------------------------------
+
+                try {
+                    $statSnapshot = (
+                        $statSnapshotBuilder->build(
+                            $character
+                        )
+                    );
+                } catch (
+                    CharacterStatSnapshotException $exception
+                ) {
+                    return [
+                        'ok' => false,
+
+                        'reason' => 'invalid_character_stats',
+
+                        'message' => (
+                            $exception->getMessage()
+                        ),
+
+                        'context' => (
+                            $exception->context()
+                        ),
+                    ];
+                }
+
+
                 $runtimeState = (
                     $character->runtimeState
                 );
+
 
                 $learnedSkillIds = (
                     $character
@@ -156,11 +189,16 @@ class InternalGameSessionTicketController extends Controller
                         ->sort()
                         ->values()
                         ->all()
-                );                
+                );
+
 
                 // -----------------------------------------
                 // A partir de este momento el ticket queda
                 // definitivamente consumido.
+                //
+                // Llegar aquí significa que identidad,
+                // progression, Stats y demás durable state
+                // necesarios para bootstrap son válidos.
                 // -----------------------------------------
 
                 $ticket->forceFill([
@@ -186,6 +224,7 @@ class InternalGameSessionTicketController extends Controller
                             $character->class_id
                         ),
 
+
                         // ---------------------------------
                         // PROGRESIÓN DURABLE
                         // ---------------------------------
@@ -198,6 +237,20 @@ class InternalGameSessionTicketController extends Controller
                             $character->experience
                         ),
 
+                        'reset_count' => (
+                            $character->reset_count
+                        ),
+
+
+                        // ---------------------------------
+                        // PRIMARY STATS DURABLES
+                        // ---------------------------------
+
+                        'stats' => (
+                            $statSnapshot
+                        ),
+
+
                         // ---------------------------------
                         // SKILL OWNERSHIP DURABLE
                         // ---------------------------------
@@ -207,7 +260,8 @@ class InternalGameSessionTicketController extends Controller
                                 $learnedSkillIds
                             ),
                         ],
-                        
+
+
                         // ---------------------------------
                         // RUNTIME DURABLE
                         // ---------------------------------
@@ -284,31 +338,55 @@ class InternalGameSessionTicketController extends Controller
 
                 'account_disabled' => 403,
 
+                'invalid_character_stats' => 409,
+
                 default => 401,
             };
 
 
-            return response()->json([
+            $message = match ($reason) {
+                'expired' => (
+                    'El ticket expiró.'
+                ),
+
+                'consumed' => (
+                    'El ticket ya fue utilizado.'
+                ),
+
+                'account_disabled' => (
+                    'La cuenta no está habilitada.'
+                ),
+
+                'invalid_character_stats' => (
+                    $result['message']
+                ),
+
+                default => (
+                    'Ticket inválido.'
+                ),
+            };
+
+
+            $response = [
                 'ok' => false,
 
-                'message' => match ($reason) {
-                    'expired' => (
-                        'El ticket expiró.'
-                    ),
+                'message' => $message,
+            ];
 
-                    'consumed' => (
-                        'El ticket ya fue utilizado.'
-                    ),
 
-                    'account_disabled' => (
-                        'La cuenta no está habilitada.'
-                    ),
+            if (
+                $reason === 'invalid_character_stats'
+            ) {
+                $response['data'] = (
+                    $result['context']
+                );
+            }
 
-                    default => (
-                        'Ticket inválido.'
-                    ),
-                },
-            ], $status);
+
+            return response()->json(
+                $response,
+                $status
+            );
         }
 
 
