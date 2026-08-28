@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'class_id',
     'level',
     'experience',
+    'reset_count',
 ])]
 class Character extends Model
 {
@@ -23,9 +24,12 @@ class Character extends Model
     {
         return [
             'account_id' => 'integer',
+
             'slot_index' => 'integer',
+
             'level' => 'integer',
             'experience' => 'integer',
+            'reset_count' => 'integer',
         ];
     }
 
@@ -51,6 +55,14 @@ class Character extends Model
     {
         return $this->hasOne(
             CharacterRuntimeState::class
+        );
+    }
+
+
+    public function statAllocation(): HasOne
+    {
+        return $this->hasOne(
+            CharacterStatAllocation::class
         );
     }
 
