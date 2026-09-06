@@ -339,6 +339,105 @@ class InternalCharacterEquipmentController extends Controller
         ]);
     }
 
+    public function enhanceItem(
+        Request $request,
+        int $accountId,
+        int $characterId,
+        string $uid
+    ): JsonResponse {
+        $validated = $request->validate([
+            'expected_container' => [
+                'required',
+                'string',
+
+                Rule::in([
+                    'inventory',
+                    'equipment',
+                ]),
+            ],
+
+            'expected_current_level' => [
+                'required',
+                'integer',
+                'min:0',
+            ],
+
+            'next_level' => [
+                'required',
+                'integer',
+                'min:1',
+            ],
+        ]);
+
+
+        $context = $this->resolveCharacterContext(
+            $accountId,
+            $characterId
+        );
+
+
+        if ($context instanceof JsonResponse) {
+            return $context;
+        }
+
+
+        [
+            $account,
+            $character,
+        ] = $context;
+
+
+        try {
+            $item = $this->persistence
+                ->advanceEnhancementLevel(
+                    $account,
+                    $character,
+                    $uid,
+                    (string) $validated[
+                        'expected_container'
+                    ],
+                    (int) $validated[
+                        'expected_current_level'
+                    ],
+                    (int) $validated[
+                        'next_level'
+                    ]
+                );
+        } catch (
+            EquipmentPersistenceException $exception
+        ) {
+            return $this->persistenceError(
+                $exception
+            );
+        }
+
+
+        $serializedItem = (
+            $item->container === 'equipment'
+        )
+            ? $this->serializeEquipmentItem(
+                $item
+            )
+            : $this->serializeInventoryItem(
+                $item
+            );
+
+
+        return response()->json([
+            'ok' => true,
+
+            'data' => [
+                'account_id' => $account->id,
+
+                'character_id' => $character->id,
+
+                'container' => $item->container,
+
+                'item' => $serializedItem,
+            ],
+        ]);
+    }
+
 
     /**
      * @return array{0: Account, 1: Character}|JsonResponse
@@ -445,7 +544,8 @@ class InternalCharacterEquipmentController extends Controller
                 => 404,
 
             EquipmentPersistenceException::SOURCE_STATE_CONFLICT,
-            EquipmentPersistenceException::SLOT_OCCUPIED
+            EquipmentPersistenceException::SLOT_OCCUPIED,
+            EquipmentPersistenceException::INVALID_ENHANCEMENT_TRANSITION
                 => 409,
 
             default

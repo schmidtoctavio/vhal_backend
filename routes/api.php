@@ -329,6 +329,21 @@ Route::middleware(
         'uid'
     );
 
+    Route::patch(
+        '/internal/accounts/{accountId}/characters/{characterId}/equipment/items/{uid}/enhancement',
+        [
+            InternalCharacterEquipmentController::class,
+            'enhanceItem',
+        ]
+    )->whereNumber(
+        'accountId'
+    )->whereNumber(
+        'characterId'
+    )->whereUuid(
+        'uid'
+    );
+
+
 
     // =====================================================
     // TRANSFERENCIAS INVENTORY <-> VAULT
