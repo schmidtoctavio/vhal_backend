@@ -302,4 +302,272 @@ final class CharacterEquipmentPersistence
             }
         );
     }
+
+    public function advanceEnhancementLevel(
+        Account $account,
+        Character $character,
+        string $uid,
+        string $expectedContainer,
+        int $expectedCurrentLevel,
+        int $nextLevel
+    ): ItemInstance {
+        if (
+            ! in_array(
+                $expectedContainer,
+                [
+                    'inventory',
+                    'equipment',
+                ],
+                true
+            )
+        ) {
+            throw EquipmentPersistenceException
+                ::invalidEnhancementTransition([
+                    'expected_container' => (
+                        $expectedContainer
+                    ),
+                ]);
+        }
+
+
+        if (
+            $expectedCurrentLevel < 0
+            ||
+            $nextLevel < 0
+            ||
+            $nextLevel !== $expectedCurrentLevel + 1
+        ) {
+            throw EquipmentPersistenceException
+                ::invalidEnhancementTransition([
+                    'expected_current_level' => (
+                        $expectedCurrentLevel
+                    ),
+
+                    'next_level' => $nextLevel,
+                ]);
+        }
+
+
+        return DB::transaction(
+            function () use (
+                $account,
+                $character,
+                $uid,
+                $expectedContainer,
+                $expectedCurrentLevel,
+                $nextLevel
+            ): ItemInstance {
+                $item = ItemInstance::query()
+                    ->where(
+                        'account_id',
+                        $account->id
+                    )
+                    ->where(
+                        'character_id',
+                        $character->id
+                    )
+                    ->where(
+                        'container',
+                        $expectedContainer
+                    )
+                    ->where(
+                        'uid',
+                        $uid
+                    )
+                    ->lockForUpdate()
+                    ->first();
+
+
+                if ($item === null) {
+                    throw EquipmentPersistenceException
+                        ::itemNotFound(
+                            $expectedContainer
+                        );
+                }
+
+
+                // ---------------------------------------------
+                // VALIDAR FORMA DEL CONTENEDOR
+                // ---------------------------------------------
+
+                if (
+                    $expectedContainer === 'inventory'
+                    &&
+                    (
+                        $item->grid_x === null
+                        ||
+                        $item->grid_y === null
+                        ||
+                        $item->equipment_slot !== null
+                    )
+                ) {
+                    throw EquipmentPersistenceException
+                        ::sourceStateConflict([
+                            'uid' => $item->uid,
+
+                            'container' => $item->container,
+
+                            'grid_position' => [
+                                'x' => $item->grid_x,
+                                'y' => $item->grid_y,
+                            ],
+
+                            'equipment_slot' => (
+                                $item->equipment_slot
+                            ),
+                        ]);
+                }
+
+
+                if (
+                    $expectedContainer === 'equipment'
+                    &&
+                    (
+                        $item->grid_x !== null
+                        ||
+                        $item->grid_y !== null
+                        ||
+                        $item->equipment_slot === null
+                    )
+                ) {
+                    throw EquipmentPersistenceException
+                        ::sourceStateConflict([
+                            'uid' => $item->uid,
+
+                            'container' => $item->container,
+
+                            'grid_position' => [
+                                'x' => $item->grid_x,
+                                'y' => $item->grid_y,
+                            ],
+
+                            'equipment_slot' => (
+                                $item->equipment_slot
+                            ),
+                        ]);
+                }
+
+
+                // ---------------------------------------------
+                // ESTADO ACTUAL
+                //
+                // null / [] legacy representan +0.
+                // ---------------------------------------------
+
+                $state = $item->state ?? [];
+
+
+                if (! is_array($state)) {
+                    throw EquipmentPersistenceException
+                        ::sourceStateConflict([
+                            'uid' => $item->uid,
+
+                            'container' => $item->container,
+
+                            'state' => $item->state,
+                        ]);
+                }
+
+
+                $currentLevelValue = (
+                    $state['enhancement_level']
+                    ??
+                    0
+                );
+
+
+                if (
+                    ! is_int($currentLevelValue)
+                    ||
+                    $currentLevelValue < 0
+                ) {
+                    throw EquipmentPersistenceException
+                        ::sourceStateConflict([
+                            'uid' => $item->uid,
+
+                            'container' => $item->container,
+
+                            'state' => $state,
+                        ]);
+                }
+
+
+                $currentLevel = $currentLevelValue;
+
+
+                // ---------------------------------------------
+                // PROTECCIÓN STALE
+                //
+                // El Game Server construyó su candidato usando
+                // expectedCurrentLevel.
+                //
+                // Si DB ya cambió, no podemos sobreescribir.
+                // ---------------------------------------------
+
+                if (
+                    $currentLevel
+                    !==
+                    $expectedCurrentLevel
+                ) {
+                    throw EquipmentPersistenceException
+                        ::sourceStateConflict([
+                            'uid' => $item->uid,
+
+                            'container' => $item->container,
+
+                            'expected_current_level' => (
+                                $expectedCurrentLevel
+                            ),
+
+                            'actual_current_level' => (
+                                $currentLevel
+                            ),
+                        ]);
+                }
+
+
+                // ---------------------------------------------
+                // BACKSTOP DURABLE
+                //
+                // Laravel no decide Max Level ni gameplay,
+                // pero sí garantiza que esta operación sea
+                // exactamente N → N+1.
+                // ---------------------------------------------
+
+                if (
+                    $nextLevel
+                    !==
+                    $currentLevel + 1
+                ) {
+                    throw EquipmentPersistenceException
+                        ::invalidEnhancementTransition([
+                            'uid' => $item->uid,
+
+                            'current_level' => $currentLevel,
+
+                            'next_level' => $nextLevel,
+                        ]);
+                }
+
+
+                // ---------------------------------------------
+                // PRESERVAR TODO EL RESTO DE STATE
+                // ---------------------------------------------
+
+                $state[
+                    'enhancement_level'
+                ] = $nextLevel;
+
+
+                $item->state = $state;
+
+
+                $item->save();
+
+
+                return $item->refresh();
+            }
+        );
+    }
+
 }

@@ -11,6 +11,10 @@ final class EquipmentPersistenceException extends RuntimeException
     public const SOURCE_STATE_CONFLICT = 'source_state_conflict';
 
     public const SLOT_OCCUPIED = 'slot_occupied';
+    
+    public const INVALID_ENHANCEMENT_TRANSITION = (
+       'invalid_enhancement_transition'
+    );  
 
 
     public function __construct(
@@ -77,6 +81,18 @@ final class EquipmentPersistenceException extends RuntimeException
         );
     }
 
+    public static function invalidEnhancementTransition(
+        array $context = []
+    ): self {
+        return new self(
+            self::INVALID_ENHANCEMENT_TRANSITION,
+            (
+                'La transición persistente de Enhancement '
+                .'no es válida.'
+            ),
+            $context
+        );
+    }
 
     public function reason(): string
     {
